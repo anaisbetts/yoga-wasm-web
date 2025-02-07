@@ -5,7 +5,11 @@ import nodeResolve from "@rollup/plugin-node-resolve";
 
 // copy wasm file
 await mkdir("./dist/generated/", { recursive: true });
-await copyFile("./tmp/yoga.wasm", "./dist/yoga.wasm");
+
+// Read WASM file and convert to base64
+const wasmBuffer = await readFile("./tmp/yoga.wasm");
+const base64Wasm = wasmBuffer.toString('base64');
+await writeFile("./yoga-wasm.js", `const yogaWasm = "${base64Wasm}";\nexport default yogaWasm;`);
 
 // copy d.ts files
 let wrapAsm = await readFile("./yoga/javascript/src_js/wrapAsm.d.ts");
@@ -21,19 +25,25 @@ await copyFile(
 
 export default [
   {
-    input: ["asm.js", "index.js", "node.js", "browser.js"],
+    input: ["yoga-wasm.js", "asm.js", "index.js", "node.js", "browser.js"],
     output: {
       dir: "dist",
       format: "esm",
+      sourcemap: true,
     },
     plugins: [
-      nodeResolve(),
+      nodeResolve({
+        browser: true,
+        preferBuiltins: false
+      }),
       commonjs({
         esmExternals: true,
+        requireReturnsDefault: "auto"
       }),
       minify(
         defineRollupSwcMinifyOption({
-          compress: { passes: 2 },
+          module: true,
+          compress: { passes: 2 }
         })
       ),
     ],
