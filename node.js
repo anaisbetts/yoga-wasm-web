@@ -1,9 +1,8 @@
-import { readFile } from "node:fs/promises";
-import { createRequire } from "node:module";
 import initYoga from "./index.js";
+import yogaWasm from "./yoga-wasm.js";
 
 const Yoga = await initYoga(
-  await readFile(createRequire(import.meta.url).resolve("./yoga.wasm"))
+  Buffer.from(yogaWasm, "base64")
 );
 
 export * from "./yoga/javascript/src_js/generated/YGEnums.js";
